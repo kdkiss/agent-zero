@@ -1152,7 +1152,7 @@ function handleFiles(files, inputAD) {
     });
 }
 
-// Modify the existing handleFileUpload to use the new handleFiles function
+// Delegate file input uploads to handleFiles
 window.handleFileUpload = function(event) {
     const files = event.target.files;
     const inputAD = Alpine.$data(inputSection);
