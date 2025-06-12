@@ -55,7 +55,7 @@
   --font-size-small: 0.8rem;
   --font-size-normal: 1rem;
   --font-size-large: 1.2rem;
-  --font-size-message: 1.05rem;
+  --font-size-message: 1.1rem;
 
   /* Other variables */
   --border-radius: 1.125rem;
@@ -422,6 +422,7 @@ h3 {
 
 h4 {
   margin: auto 0;
+  font-size: var(--font-size-small);
 }
 
 #a0version {
@@ -577,7 +578,8 @@ pre {
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
   font-weight: 500;
   font-size: var(--font-size-message);
-  line-height: 1.4;
+  line-height: 1.5;
+  letter-spacing: 0.015em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -606,6 +608,7 @@ pre {
   min-width: 195px;
   text-align: end;
   color: var(--color-message-text-dark);
+  font-weight: 600;
 }
 
 .message-user > div {
@@ -618,6 +621,8 @@ pre {
 
 .message-ai {
   border-bottom-left-radius: var(--spacing-xs);
+  background-color: var(--color-secondary);
+  color: var(--color-text);
 }
 
 .message-center {
@@ -1981,6 +1986,7 @@ a:active {
 .light-mode .message-user {
   background-color: var(--color-primary-light);
   color: #ffffff;
+  font-weight: 600;
 }
 
 .light-mode .connected {
