@@ -55,6 +55,7 @@
   --font-size-small: 0.8rem;
   --font-size-normal: 1rem;
   --font-size-large: 1.2rem;
+  --font-size-message: 1.05rem;
 
   /* Other variables */
   --border-radius: 1.125rem;
@@ -575,6 +576,9 @@ pre {
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
   font-weight: 500;
+  font-size: var(--font-size-message);
+  line-height: 1.4;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .user-container {
