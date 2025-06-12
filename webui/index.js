@@ -789,7 +789,8 @@ window.restart = async function () {
 
 // Modify this part
 document.addEventListener('DOMContentLoaded', () => {
-    const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+    // Default to light mode unless user previously chose dark mode
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
     toggleDarkMode(isDarkMode);
 });
 
