@@ -570,8 +570,11 @@ pre {
 
 .message {
   background-color: var(--color-message-bg);
+  color: var(--color-message-text);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
+  font-weight: 500;
 }
 
 .user-container {
@@ -594,10 +597,11 @@ pre {
 }
 
 .message-user {
-  background-color: #4a4a4a;
+  background-color: var(--color-primary-dark);
   border-bottom-right-radius: var(--spacing-xs);
   min-width: 195px;
   text-align: end;
+  color: var(--color-message-text-dark);
 }
 
 .message-user > div {
@@ -1971,8 +1975,8 @@ a:active {
 }
 
 .light-mode .message-user {
-  background-color: #f3f3f3;
-  color: #4e4e4e;
+  background-color: var(--color-primary-light);
+  color: #ffffff;
 }
 
 .light-mode .connected {
