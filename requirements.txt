@@ -36,3 +36,5 @@ unstructured-client==0.25.9
 webcolors==24.6.0
 nest-asyncio==1.6.0
 crontab==1.0.1
+language-tool-python==2.7.1
+uvicorn==0.29.0

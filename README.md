@@ -54,6 +54,7 @@
 - **Default Tools:** Agent Zero includes tools like knowledge, webpage content, code execution, and communication.
 - **Creating Custom Tools:** Extend Agent Zero's functionality by creating your own custom tools.
 - **Instruments:** Instruments are a new type of tool that allow you to create custom functions and procedures that can be called by Agent Zero.
+- **Custom MCP Servers:** Example script `python/mcp_servers/language_tool_server.py` wraps the LanguageTool API.
 
 3. **Multi-agent Cooperation**
 
