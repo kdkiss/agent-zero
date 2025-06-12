@@ -7,17 +7,17 @@
 
 :root {
   /* Dark mode */
-  --color-background-dark: #1c1c1c;
-  --color-text-dark: #f0f0f0;
-  --color-primary-dark: #e95f2a;
-  --color-secondary-dark: #3a3a3a;
-  --color-accent-dark: #ff7f50;
-  --color-message-bg-dark: #242424;
-  --color-message-text-dark: #f5f5f5;
-  --color-panel-dark: #222;
-  --color-border-dark: #444;
-  --color-input-dark: #1c1c1c;
-  --color-input-focus-dark: #2c2c2c;
+  --color-background-dark: #0d0f1e;
+  --color-text-dark: #e6e9ff;
+  --color-primary-dark: #27b8ff;
+  --color-secondary-dark: #1a1c2c;
+  --color-accent-dark: #ff4d84;
+  --color-message-bg-dark: rgba(255, 255, 255, 0.05);
+  --color-message-text-dark: #f5f7ff;
+  --color-panel-dark: rgba(255, 255, 255, 0.08);
+  --color-border-dark: rgba(255, 255, 255, 0.2);
+  --color-input-dark: rgba(255, 255, 255, 0.05);
+  --color-input-focus-dark: rgba(255, 255, 255, 0.1);
 
   /* Light mode */
   --color-background-light: #ffffff;
@@ -36,18 +36,18 @@
   --color-user-text-dark: #ffffff;
   --color-user-text-light: #222;
 
-  /* Default to light mode */
-  --color-background: var(--color-background-light);
-  --color-text: var(--color-text-light);
-  --color-primary: var(--color-primary-light);
-  --color-secondary: var(--color-secondary-light);
-  --color-accent: var(--color-accent-light);
-  --color-message-bg: var(--color-message-bg-light);
-  --color-message-text: var(--color-message-text-light);
-  --color-panel: var(--color-panel-light);
-  --color-border: var(--color-border-light);
-  --color-input: var(--color-input-light);
-  --color-input-focus: var(--color-input-focus-light);
+  /* Default to dark mode */
+  --color-background: var(--color-background-dark);
+  --color-text: var(--color-text-dark);
+  --color-primary: var(--color-primary-dark);
+  --color-secondary: var(--color-secondary-dark);
+  --color-accent: var(--color-accent-dark);
+  --color-message-bg: var(--color-message-bg-dark);
+  --color-message-text: var(--color-message-text-dark);
+  --color-panel: var(--color-panel-dark);
+  --color-border: var(--color-border-dark);
+  --color-input: var(--color-input-dark);
+  --color-input-focus: var(--color-input-focus-dark);
 
   /* Spacing variables */
   --spacing-xs: 0.3125rem;
@@ -86,6 +86,32 @@ html {
   -moz-osx-font-smoothing: grayscale;    /* Improve font rendering */
 }
 
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background-repeat: repeat;
+  z-index: -1;
+}
+
+body::before {
+  background-image: radial-gradient(1px 1px at 20px 20px, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.3) 50%, transparent 50%), radial-gradient(1px 1px at 80px 80px, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, transparent 50%);
+  background-size: 100px 100px;
+  animation: starScroll 60s linear infinite;
+  opacity: 0.15;
+}
+
+body::after {
+  background: radial-gradient(circle at 30% 30%, rgba(50,80,150,0.2), transparent 60%);
+  backdrop-filter: blur(2px);
+  opacity: 0.4;
+}
+
 body {
   overscroll-behavior: none;
   -webkit-overscroll-behavior: none;
@@ -121,6 +147,7 @@ body,
 /* Left Panel */
 #left-panel {
   background-color: var(--color-panel);
+  backdrop-filter: blur(12px);
   border-right: 1px solid var(--color-border);
   box-sizing: border-box;
   display: -webkit-flex;
@@ -174,7 +201,7 @@ body,
 .toggle-sidebar-button {
   height: 2.6rem;
   width: 2.6rem;
-  background-color: var(--color-background);
+  background-color: rgba(255, 255, 255, 0.06);
   border: 0.1rem solid var(--color-border);
   border-radius: var(--spacing-xs);
   color: var(--color-text);
@@ -379,6 +406,7 @@ body,
   width: 100%;
   flex-direction: column;
   flex-grow: 1;
+  backdrop-filter: blur(8px);
   -webkit-transition: margin-left var(--transition-speed) ease-in-out;
   transition: margin-left var(--transition-speed) ease-in-out;
 }
@@ -582,6 +610,7 @@ pre {
   background-color: var(--color-message-bg);
   color: var(--color-message-text);
   border: 1px solid var(--color-border);
+  backdrop-filter: blur(6px);
   border-radius: var(--border-radius);
   padding: 0.9rem var(--spacing-md) 0.7rem var(--spacing-md);
   font-weight: 500;
@@ -1675,6 +1704,15 @@ input:checked + .slider:before {
   }
 }
 
+@keyframes starScroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1000px);
+  }
+}
+
 /* Media Queries */
 @media (max-width: 640px) {
   .text-buttons-row {
@@ -1915,6 +1953,21 @@ a:hover {
 
 a:active {
     color: inherit;
+}
+
+/* Dark mode class */
+.dark-mode {
+  --color-background: var(--color-background-dark);
+  --color-text: var(--color-text-dark);
+  --color-primary: var(--color-primary-dark);
+  --color-secondary: var(--color-secondary-dark);
+  --color-accent: var(--color-accent-dark);
+  --color-message-bg: var(--color-message-bg-dark);
+  --color-message-text: var(--color-message-text-dark);
+  --color-panel: var(--color-panel-dark);
+  --color-border: var(--color-border-dark);
+  --color-input: var(--color-input-dark);
+  --color-input-focus: var(--color-input-focus-dark);
 }
 
 /* Light mode class */

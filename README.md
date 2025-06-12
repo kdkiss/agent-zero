@@ -129,6 +129,7 @@ docker run -p 50001:80 frdel/agent-zero-run
 - Code blocks now feature a panel background and borders, making copying snippets easier.
 - Chat messages now use larger fonts and subtle shadows to make text stand out.
 - Agent messages have higher line spacing and clearer contrast for easier reading.
+- The dark theme features a starfield background and glassy panels for a Manus.im-style feel.
 - The same output you see in the terminal is automatically saved to an HTML file in **logs/** folder for every session.
 
 ![Time example](/docs/res/time_example.jpg)
