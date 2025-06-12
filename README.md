@@ -130,6 +130,7 @@ docker run -p 50001:80 frdel/agent-zero-run
 - Chat messages now use larger fonts and subtle shadows to make text stand out.
 - Agent messages have higher line spacing and clearer contrast for easier reading.
 - Switching to dark mode adds a starfield background and glassy panels for a space look.
+- Your theme choice is saved in localStorage under the key `theme` so the page remembers light or dark mode.
 - The same output you see in the terminal is automatically saved to an HTML file in **logs/** folder for every session.
 
 ![Time example](/docs/res/time_example.jpg)

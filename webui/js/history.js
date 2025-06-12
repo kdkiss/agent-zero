@@ -37,8 +37,8 @@ async function showEditorModal(data, type = "json", title, description = "") {
     if (container) {
         const editor = ace.edit("json-viewer-container");
 
-        const dark = localStorage.getItem('darkMode')
-        if (dark != "false") {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark') {
             editor.setTheme("ace/theme/github_dark");
         } else {
             editor.setTheme("ace/theme/tomorrow");

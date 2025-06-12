@@ -727,12 +727,12 @@ window.toggleDarkMode = function (isDark) {
     if (isDark) {
         document.body.classList.remove('light-mode');
         document.body.classList.add('dark-mode');
-       } else {
+    } else {
         document.body.classList.remove('dark-mode');
         document.body.classList.add('light-mode');
     }
     console.log("Dark mode:", isDark);
-    localStorage.setItem('darkMode', isDark);
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
 };
 
 window.toggleSpeech = function (isOn) {
@@ -789,8 +789,8 @@ window.restart = async function () {
 
 document.addEventListener('DOMContentLoaded', () => {
     // Default to light mode unless user explicitly chose dark mode
-    const pref = localStorage.getItem('darkMode');
-    const isDarkMode = pref === 'true';
+    const theme = localStorage.getItem('theme');
+    const isDarkMode = theme === 'dark';
     toggleDarkMode(isDarkMode);
 });
 

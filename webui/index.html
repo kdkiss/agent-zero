@@ -280,7 +280,7 @@
                                     <span class="slider"></span>
                                 </label>
                             </li>
-                            <li x-data="{ darkMode: localStorage.getItem('darkMode') != 'false' }"
+                            <li x-data="{ darkMode: localStorage.getItem('theme') === 'dark' }"
                                 x-init="$watch('darkMode', val => toggleDarkMode(val))">
                                 <span class="switch-label">Dark mode</span>
                                 <label class="switch">

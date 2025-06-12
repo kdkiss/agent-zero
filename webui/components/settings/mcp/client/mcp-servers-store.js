@@ -16,8 +16,8 @@ const model = {
     if (container) {
       const editor = ace.edit("mcp-servers-config-json");
 
-      const dark = localStorage.getItem("darkMode");
-      if (dark != "false") {
+      const theme = localStorage.getItem("theme");
+      if (theme === "dark") {
         editor.setTheme("ace/theme/github_dark");
       } else {
         editor.setTheme("ace/theme/tomorrow");
