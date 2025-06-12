@@ -125,7 +125,8 @@ docker run -p 50001:80 frdel/agent-zero-run
 - Customizable settings allow users to tailor the agent's behavior and responses to their needs.
 - The Web UI output is very clean, fluid, colorful, readable, and interactive; nothing is hidden.
 - You can load or save chats directly within the Web UI.
-- The default UI theme has colors inspired by manus.im and improved message bubbles for better readability.
+- The default UI theme has colors inspired by manus.im with softer user message bubbles for clarity.
+- Code blocks now feature a panel background and borders, making copying snippets easier.
 - Chat messages now use larger fonts and subtle shadows to make text stand out.
 - Agent messages have higher line spacing and clearer contrast for easier reading.
 - The same output you see in the terminal is automatically saved to an HTML file in **logs/** folder for every session.

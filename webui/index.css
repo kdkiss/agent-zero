@@ -31,6 +31,10 @@
   --color-border-light: #ddd;
   --color-input-light: #ffffff;
   --color-input-focus-light: #eee;
+  --color-user-bg-dark: #353535;
+  --color-user-bg-light: #fff4ee;
+  --color-user-text-dark: #ffffff;
+  --color-user-text-light: #222;
 
   /* Default to light mode */
   --color-background: var(--color-background-light);
@@ -436,7 +440,11 @@ pre {
   font-family: 'Roboto Mono', monospace;
   font-optical-sizing: auto;
   -webkit-font-optical-sizing: auto;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: calc(var(--border-radius) / 1.5);
+  padding: var(--spacing-xs) var(--spacing-sm);
 }
 
 /* Chat History */
@@ -603,11 +611,11 @@ pre {
 }
 
 .message-user {
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-user-bg-dark);
   border-bottom-right-radius: var(--spacing-xs);
   min-width: 195px;
   text-align: end;
-  color: var(--color-message-text-dark);
+  color: var(--color-user-text-dark);
   font-weight: 600;
 }
 
@@ -1984,8 +1992,8 @@ a:active {
 }
 
 .light-mode .message-user {
-  background-color: var(--color-primary-light);
-  color: #ffffff;
+  background-color: var(--color-user-bg-light);
+  color: var(--color-user-text-light);
   font-weight: 600;
 }
 
