@@ -31,23 +31,23 @@
   --color-border-light: #ddd;
   --color-input-light: #ffffff;
   --color-input-focus-light: #eee;
-  --color-user-bg-dark: #353535;
+  --color-user-bg-dark: #2c2f36;
   --color-user-bg-light: #fff4ee;
   --color-user-text-dark: #ffffff;
   --color-user-text-light: #222;
 
-  /* Default to dark mode */
-  --color-background: var(--color-background-dark);
-  --color-text: var(--color-text-dark);
-  --color-primary: var(--color-primary-dark);
-  --color-secondary: var(--color-secondary-dark);
-  --color-accent: var(--color-accent-dark);
-  --color-message-bg: var(--color-message-bg-dark);
-  --color-message-text: var(--color-message-text-dark);
-  --color-panel: var(--color-panel-dark);
-  --color-border: var(--color-border-dark);
-  --color-input: var(--color-input-dark);
-  --color-input-focus: var(--color-input-focus-dark);
+  /* Default to light mode */
+  --color-background: var(--color-background-light);
+  --color-text: var(--color-text-light);
+  --color-primary: var(--color-primary-light);
+  --color-secondary: var(--color-secondary-light);
+  --color-accent: var(--color-accent-light);
+  --color-message-bg: var(--color-message-bg-light);
+  --color-message-text: var(--color-message-text-light);
+  --color-panel: var(--color-panel-light);
+  --color-border: var(--color-border-light);
+  --color-input: var(--color-input-light);
+  --color-input-focus: var(--color-input-focus-light);
 
   /* Spacing variables */
   --spacing-xs: 0.3125rem;
@@ -59,7 +59,7 @@
   --font-size-small: 0.8rem;
   --font-size-normal: 1rem;
   --font-size-large: 1.2rem;
-  --font-size-message: 1.1rem;
+  --font-size-message: 1.2rem;
 
   /* Other variables */
   --border-radius: 1.125rem;
@@ -86,8 +86,8 @@ html {
   -moz-osx-font-smoothing: grayscale;    /* Improve font rendering */
 }
 
-body::before,
-body::after {
+.dark-mode::before,
+.dark-mode::after {
   content: "";
   position: fixed;
   top: 0;
@@ -99,14 +99,14 @@ body::after {
   z-index: -1;
 }
 
-body::before {
+.dark-mode::before {
   background-image: radial-gradient(1px 1px at 20px 20px, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.3) 50%, transparent 50%), radial-gradient(1px 1px at 80px 80px, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.2) 50%, transparent 50%);
   background-size: 100px 100px;
   animation: starScroll 60s linear infinite;
   opacity: 0.15;
 }
 
-body::after {
+.dark-mode::after {
   background: radial-gradient(circle at 30% 30%, rgba(50,80,150,0.2), transparent 60%);
   backdrop-filter: blur(2px);
   opacity: 0.4;
@@ -617,7 +617,7 @@ pre {
   font-size: var(--font-size-message);
   line-height: 1.5;
   letter-spacing: 0.015em;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .user-container {
@@ -646,6 +646,7 @@ pre {
   text-align: end;
   color: var(--color-user-text-dark);
   font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .message-user > div {
@@ -2048,6 +2049,7 @@ a:active {
   background-color: var(--color-user-bg-light);
   color: var(--color-user-text-light);
   font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
 }
 
 .light-mode .connected {
