@@ -18,3 +18,5 @@ Instrument descriptions in prompts are executed with `code_execution_tool`.
 Use templates that match the task (code review, documentation, creative writing).
 Leverage tools to streamline editing and formatting.
 Do not rely on out-of-date memories such as timestamps.
+Break complex projects into smaller subtasks and prompt the model step by step.
+Regularly evaluate outputs against instructions and iterate until all criteria are met.
