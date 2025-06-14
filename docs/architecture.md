@@ -257,6 +257,15 @@ The `prompts` directory contains various Markdown files that control agent behav
 > The behavior system allows for dynamic adjustments without modifying the base prompt files.
 > Changes made through behavior rules persist across sessions while maintaining the core functionality.
 
+#### Writer Agent Prompt Set
+The `prompts/writer_agent/` directory provides a specialized collection of prompts for managing writing projects.
+
+- Mirrors the default structure while adding a dedicated reflection phase.
+- Defines roles for the Task Planner, Researcher, Writer, Editor, Proofreader, and Final Draft Creator agents.
+- Select the `writer_agent` prompt directory in **Agent Config** to enable these roles.
+- Extend or customize the set by copying the folder and adjusting files as needed.
+
+
 ### 5. Knowledge
 Knowledge refers to the user-provided information and data that agents can leverage:
 

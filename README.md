@@ -70,6 +70,8 @@
 - The whole behavior is defined by a system prompt in the **prompts/default/agent.system.md** file. Change this prompt and change the framework dramatically.
 - The framework does not guide or limit the agent in any way. There are no hard-coded rails that agents have to follow.
 - Every prompt, every small message template sent to the agent in its communication loop can be found in the **prompts/** folder and changed.
+- Custom prompt sets (for example `prompts/writer_agent/`) can be selected in **Agent Config** to tailor the framework for specialized tasks.
+- Behavioral rules can be modified on the fly and are merged automatically with your selected prompt set.
 - Every default tool can be found in the **python/tools/** folder and changed or copied to create new predefined tools.
 
 ![Prompts](/docs/res/prompts.png)
