@@ -7,14 +7,17 @@ import subprocess
 from typing import Any, Literal, TypedDict
 
 import models
-from python.helpers import runtime, whisper, defer
+from python.helpers import runtime, whisper, defer, git
 from . import files, dotenv
 from python.helpers.print_style import PrintStyle
 
 
 class Settings(TypedDict):
+    version: str
+
     chat_model_provider: str
     chat_model_name: str
+    chat_model_api_base: str
     chat_model_kwargs: dict[str, str]
     chat_model_ctx_length: int
     chat_model_ctx_history: float
@@ -25,6 +28,7 @@ class Settings(TypedDict):
 
     util_model_provider: str
     util_model_name: str
+    util_model_api_base: str
     util_model_kwargs: dict[str, str]
     util_model_ctx_length: int
     util_model_ctx_input: float
@@ -34,12 +38,14 @@ class Settings(TypedDict):
 
     embed_model_provider: str
     embed_model_name: str
+    embed_model_api_base: str
     embed_model_kwargs: dict[str, str]
     embed_model_rl_requests: int
     embed_model_rl_input: int
 
     browser_model_provider: str
     browser_model_name: str
+    browser_model_api_base: str
     browser_model_vision: bool
     browser_model_kwargs: dict[str, str]
 
@@ -65,6 +71,8 @@ class Settings(TypedDict):
     stt_silence_duration: int
     stt_waiting_timeout: int
 
+    tts_kokoro: bool
+
     mcp_servers: str
     mcp_client_init_timeout: int
     mcp_client_tool_timeout: int
@@ -86,7 +94,7 @@ class SettingsField(TypedDict, total=False):
     title: str
     description: str
     type: Literal[
-        "text", "number", "select", "range", "textarea", "password", "switch", "button"
+        "text", "number", "select", "range", "textarea", "password", "switch", "button", "html"
     ]
     value: Any
     min: float
@@ -116,6 +124,7 @@ _settings: Settings | None = None
 
 def convert_out(settings: Settings) -> SettingsOutput:
     from models import ModelProvider
+    default_settings = get_default_settings()
 
     # main model section
     chat_model_fields: list[SettingsField] = []
@@ -136,6 +145,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
             "description": "Exact name of model from selected provider",
             "type": "text",
             "value": settings["chat_model_name"],
+        }
+    )
+
+    chat_model_fields.append(
+        {
+            "id": "chat_model_api_base",
+            "title": "Chat model API base URL",
+            "description": "API base URL for main chat model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["chat_model_api_base"],
         }
     )
 
@@ -206,7 +225,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "chat_model_kwargs",
             "title": "Chat model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["chat_model_kwargs"]),
         }
@@ -244,6 +263,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     util_model_fields.append(
         {
+            "id": "util_model_api_base",
+            "title": "Utility model API base URL",
+            "description": "API base URL for utility model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["util_model_api_base"],
+        }
+    )
+
+    util_model_fields.append(
+        {
             "id": "util_model_rl_requests",
             "title": "Requests per minute limit",
             "description": "Limits the number of requests per minute to the utility model. Waits if the limit is exceeded. Set to 0 to disable rate limiting.",
@@ -276,7 +305,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "util_model_kwargs",
             "title": "Utility model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["util_model_kwargs"]),
         }
@@ -314,6 +343,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     embed_model_fields.append(
         {
+            "id": "embed_model_api_base",
+            "title": "Embedding model API base URL",
+            "description": "API base URL for embedding model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["embed_model_api_base"],
+        }
+    )
+
+    embed_model_fields.append(
+        {
             "id": "embed_model_rl_requests",
             "title": "Requests per minute limit",
             "description": "Limits the number of requests per minute to the embedding model. Waits if the limit is exceeded. Set to 0 to disable rate limiting.",
@@ -336,7 +375,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "embed_model_kwargs",
             "title": "Embedding model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["embed_model_kwargs"]),
         }
@@ -345,7 +384,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     embed_model_section: SettingsSection = {
         "id": "embed_model",
         "title": "Embedding Model",
-        "description": "Settings for the embedding model used by Agent Zero.",
+        "description": f"Settings for the embedding model used by Agent Zero.<br><h4>⚠️ No need to change</h4>The default HuggingFace model {default_settings['embed_model_name']} is preloaded and runs locally within the docker container and there's no need to change it unless you have a specific requirements for embedding.",
         "fields": embed_model_fields,
         "tab": "agent",
     }
@@ -374,6 +413,16 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     browser_model_fields.append(
         {
+            "id": "browser_model_api_base",
+            "title": "Web Browser model API base URL",
+            "description": "API base URL for web browser model. Leave empty for default. Only relevant for Azure, local and custom (other) providers.",
+            "type": "text",
+            "value": settings["browser_model_api_base"],
+        }
+    )
+
+    browser_model_fields.append(
+        {
             "id": "browser_model_vision",
             "title": "Use Vision",
             "description": "Models capable of Vision can use it to analyze web pages from screenshots. Increases quality but also token usage.",
@@ -386,7 +435,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
         {
             "id": "browser_model_kwargs",
             "title": "Web Browser model additional parameters",
-            "description": "Any other parameters supported by the model. Format is KEY=VALUE on individual lines, just like .env file.",
+            "description": "Any other parameters supported by <a href='https://docs.litellm.ai/docs/set_keys' target='_blank'>LiteLLM</a>. Format is KEY=VALUE on individual lines, just like .env file.",
             "type": "textarea",
             "value": _dict_to_env(settings["browser_model_kwargs"]),
         }
@@ -400,24 +449,6 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "agent",
     }
 
-    # # Memory settings section
-    # memory_fields: list[SettingsField] = []
-    # memory_fields.append(
-    #     {
-    #         "id": "memory_settings",
-    #         "title": "Memory Settings",
-    #         "description": "<settings for memory>",
-    #         "type": "text",
-    #         "value": "",
-    #     }
-    # )
-
-    # memory_section: SettingsSection = {
-    #     "id": "memory",
-    #     "title": "Memory Settings",
-    #     "description": "<settings for memory management here>",
-    #     "fields": memory_fields,
-    # }
 
     # basic auth section
     auth_fields: list[SettingsField] = []
@@ -467,26 +498,9 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     # api keys model section
     api_keys_fields: list[SettingsField] = []
-    api_keys_fields.append(_get_api_key_field(settings, "openai", "OpenAI API Key"))
-    api_keys_fields.append(
-        _get_api_key_field(settings, "anthropic", "Anthropic API Key")
-    )
-    api_keys_fields.append(_get_api_key_field(settings, "chutes", "Chutes API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "deepseek", "DeepSeek API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "google", "Google API Key"))
-    api_keys_fields.append(_get_api_key_field(settings, "groq", "Groq API Key"))
-    api_keys_fields.append(
-        _get_api_key_field(settings, "huggingface", "HuggingFace API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "mistralai", "MistralAI API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "openrouter", "OpenRouter API Key")
-    )
-    api_keys_fields.append(
-        _get_api_key_field(settings, "sambanova", "Sambanova API Key")
-    )
+
+    for provider in ModelProvider:
+        api_keys_fields.append(_get_api_key_field(settings, provider.name.lower(), provider.value))
 
     api_keys_section: SettingsSection = {
         "id": "api_keys",
@@ -502,8 +516,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     agent_fields.append(
         {
             "id": "agent_prompts_subdir",
-            "title": "Prompts Subdirectory",
-            "description": "Subdirectory of /prompts folder to use for agent prompts. Used to adjust agent behaviour.",
+            "title": "A0 Prompts Subdirectory",
+            "description": "Subdirectory of /prompts folder to be used by default agent no. 0. Subordinate agents can be spawned with other subdirectories, that is on their superior agent to decide. This setting affects the behaviour of the top level agent you communicate with.",
             "type": "select",
             "value": settings["agent_prompts_subdir"],
             "options": [
@@ -620,9 +634,19 @@ def convert_out(settings: Settings) -> SettingsOutput:
 
     stt_fields.append(
         {
+            "id": "stt_microphone_section",
+            "title": "Microphone device",
+            "description": "Select the microphone device to use for speech-to-text.",
+            "value": "<x-component path='/settings/speech/microphone.html' />",
+            "type": "html",
+        }
+    )
+
+    stt_fields.append(
+        {
             "id": "stt_model_size",
-            "title": "Model Size",
-            "description": "Select the speech recognition model size",
+            "title": "Speech-to-text model size",
+            "description": "Select the speech-to-text model size",
             "type": "select",
             "value": settings["stt_model_size"],
             "options": [
@@ -639,7 +663,7 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_language",
-            "title": "Language Code",
+            "title": "Speech-to-text language code",
             "description": "Language code (e.g. en, fr, it)",
             "type": "text",
             "value": settings["stt_language"],
@@ -649,8 +673,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_threshold",
-            "title": "Silence threshold",
-            "description": "Silence detection threshold. Lower values are more sensitive.",
+            "title": "Microphone silence threshold",
+            "description": "Silence detection threshold. Lower values are more sensitive to noise.",
             "type": "range",
             "min": 0,
             "max": 1,
@@ -662,8 +686,8 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_silence_duration",
-            "title": "Silence duration (ms)",
-            "description": "Duration of silence before the server considers speaking to have ended.",
+            "title": "Microphone silence duration (ms)",
+            "description": "Duration of silence before the system considers speaking to have ended.",
             "type": "text",
             "value": settings["stt_silence_duration"],
         }
@@ -672,18 +696,31 @@ def convert_out(settings: Settings) -> SettingsOutput:
     stt_fields.append(
         {
             "id": "stt_waiting_timeout",
-            "title": "Waiting timeout (ms)",
-            "description": "Duration before the server closes the microphone.",
+            "title": "Microphone waiting timeout (ms)",
+            "description": "Duration of silence before the system closes the microphone.",
             "type": "text",
             "value": settings["stt_waiting_timeout"],
         }
     )
 
-    stt_section: SettingsSection = {
-        "id": "stt",
-        "title": "Speech to Text",
-        "description": "Voice transcription preferences and server turn detection settings.",
-        "fields": stt_fields,
+    # TTS fields
+    tts_fields: list[SettingsField] = []
+    
+    tts_fields.append(
+        {
+            "id": "tts_kokoro",
+            "title": "Enable Kokoro TTS",
+            "description": "Enable higher quality server-side AI (Kokoro) instead of browser-based text-to-speech.",
+            "type": "switch",
+            "value": settings["tts_kokoro"],
+        }
+    )
+
+    speech_section: SettingsSection = {
+        "id": "speech",
+        "title": "Speech",
+        "description": "Voice transcription and speech synthesis settings.",
+        "fields": stt_fields + tts_fields,
         "tab": "agent",
     }
 
@@ -770,20 +807,54 @@ def convert_out(settings: Settings) -> SettingsOutput:
         "tab": "mcp",
     }
 
+    # Backup & Restore section
+    backup_fields: list[SettingsField] = []
+
+    backup_fields.append(
+        {
+            "id": "backup_create",
+            "title": "Create Backup",
+            "description": "Create a backup archive of selected files and configurations "
+            "using customizable patterns.",
+            "type": "button",
+            "value": "Create Backup",
+        }
+    )
+
+    backup_fields.append(
+        {
+            "id": "backup_restore",
+            "title": "Restore from Backup",
+            "description": "Restore files and configurations from a backup archive "
+            "with pattern-based selection.",
+            "type": "button",
+            "value": "Restore Backup",
+        }
+    )
+
+    backup_section: SettingsSection = {
+        "id": "backup_restore",
+        "title": "Backup & Restore",
+        "description": "Backup and restore Agent Zero data and configurations "
+        "using glob pattern-based file selection.",
+        "fields": backup_fields,
+        "tab": "backup",
+    }
+
     # Add the section to the result
     result: SettingsOutput = {
         "sections": [
             agent_section,
             chat_model_section,
             util_model_section,
-            embed_model_section,
             browser_model_section,
-            # memory_section,
-            stt_section,
+            embed_model_section,
+            speech_section,
             api_keys_section,
             auth_section,
             mcp_client_section,
             mcp_server_section,
+            backup_section,
             dev_section,
         ]
     }
@@ -844,6 +915,11 @@ def normalize_settings(settings: Settings) -> Settings:
     copy = settings.copy()
     default = get_default_settings()
 
+    # adjust settings values to match current version if needed
+    if "version" not in copy or copy["version"] != default["version"]:
+        _adjust_to_version(copy, default)
+        copy["version"] = default["version"] # sync version
+
     # remove keys that are not in default
     keys_to_remove = [key for key in copy if key not in default]
     for key in keys_to_remove:
@@ -864,6 +940,13 @@ def normalize_settings(settings: Settings) -> Settings:
 
     return copy
 
+
+def _adjust_to_version(settings: Settings, default: Settings):
+    # starting with 0.9, the default prompt subfolder for agent no. 0 is agent0
+    # switch to agent0 if the old default is used from v0.8
+    if "version" not in settings or settings["version"].startswith("v0.8"):
+        if "agent_prompts_subdir" not in settings or settings["agent_prompts_subdir"] == "default":
+            settings["agent_prompts_subdir"] = "agent0"
 
 def _read_settings_file() -> Settings | None:
     if os.path.exists(SETTINGS_FILE):
@@ -910,8 +993,10 @@ def get_default_settings() -> Settings:
     from models import ModelProvider
 
     return Settings(
-        chat_model_provider=ModelProvider.OPENAI.name,
-        chat_model_name="gpt-4.1",
+        version=_get_version(),
+        chat_model_provider=ModelProvider.OPENROUTER.name,
+        chat_model_name="openai/gpt-4.1",
+        chat_model_api_base="",
         chat_model_kwargs={"temperature": "0"},
         chat_model_ctx_length=100000,
         chat_model_ctx_history=0.7,
@@ -919,8 +1004,9 @@ def get_default_settings() -> Settings:
         chat_model_rl_requests=0,
         chat_model_rl_input=0,
         chat_model_rl_output=0,
-        util_model_provider=ModelProvider.OPENAI.name,
-        util_model_name="gpt-4.1-nano",
+        util_model_provider=ModelProvider.OPENROUTER.name,
+        util_model_name="openai/gpt-4.1-nano",
+        util_model_api_base="",
         util_model_ctx_length=100000,
         util_model_ctx_input=0.7,
         util_model_kwargs={"temperature": "0"},
@@ -929,18 +1015,20 @@ def get_default_settings() -> Settings:
         util_model_rl_output=0,
         embed_model_provider=ModelProvider.HUGGINGFACE.name,
         embed_model_name="sentence-transformers/all-MiniLM-L6-v2",
+        embed_model_api_base="",
         embed_model_kwargs={},
         embed_model_rl_requests=0,
         embed_model_rl_input=0,
-        browser_model_provider=ModelProvider.OPENAI.name,
-        browser_model_name="gpt-4.1",
+        browser_model_provider=ModelProvider.OPENROUTER.name,
+        browser_model_name="openai/gpt-4.1",
+        browser_model_api_base="",
         browser_model_vision=True,
         browser_model_kwargs={"temperature": "0"},
         api_keys={},
         auth_login="",
         auth_password="",
         root_password="",
-        agent_prompts_subdir="default",
+        agent_prompts_subdir="agent0",
         agent_memory_subdir="default",
         agent_knowledge_subdir="custom",
         rfc_auto_docker=True,
@@ -953,8 +1041,9 @@ def get_default_settings() -> Settings:
         stt_silence_threshold=0.3,
         stt_silence_duration=1000,
         stt_waiting_timeout=2000,
+        tts_kokoro=True,
         mcp_servers='{\n    "mcpServers": {}\n}',
-        mcp_client_init_timeout=5,
+        mcp_client_init_timeout=10,
         mcp_client_tool_timeout=120,
         mcp_server_enabled=False,
         mcp_server_token=create_auth_token(),
@@ -1041,14 +1130,14 @@ def _apply_settings(previous: Settings | None):
             )  # TODO overkill, replace with background task
 
         # update token in mcp server
-        current_token = create_auth_token() #TODO - ugly, token in settings is generated from dotenv and does not always correspond
-        if (
-            not previous
-            or current_token != previous["mcp_server_token"]
-        ):
+        current_token = (
+            create_auth_token()
+        )  # TODO - ugly, token in settings is generated from dotenv and does not always correspond
+        if not previous or current_token != previous["mcp_server_token"]:
 
             async def update_mcp_token(token: str):
                 from python.helpers.mcp_server import DynamicMcpProxy
+
                 DynamicMcpProxy.get_instance().reconfigure(token=token)
 
             task3 = defer.DeferredTask().start_task(
@@ -1083,7 +1172,12 @@ def _dict_to_env(data_dict):
 def set_root_password(password: str):
     if not runtime.is_dockerized():
         raise Exception("root password can only be set in dockerized environments")
-    subprocess.run(f"echo 'root:{password}' | chpasswd", shell=True, check=True)
+    _result = subprocess.run(
+        ["chpasswd"],
+        input=f"root:{password}".encode(),
+        capture_output=True,
+        check=True,
+    )
     dotenv.save_dotenv_value(dotenv.KEY_ROOT_PASSWORD, password)
 
 
@@ -1121,3 +1215,11 @@ def create_auth_token() -> str:
     # encode as base64 and remove any non-alphanumeric chars (like +, /, =)
     b64_token = base64.urlsafe_b64encode(hash_bytes).decode().replace("=", "")
     return b64_token[:16]
+
+
+def _get_version():
+    try:
+        git_info = git.get_git_info()
+        return str(git_info.get("short_tag", "")).strip() or "unknown"
+    except Exception:
+        return "unknown"
