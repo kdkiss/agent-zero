@@ -1,3 +1,21 @@
+import * as msgs from "./js/messages.js";
+import { speech } from "./js/speech.js";
+
+const leftPanel = document.getElementById('left-panel');
+const rightPanel = document.getElementById('right-panel');
+const container = document.querySelector('.container');
+const chatInput = document.getElementById('chat-input');
+const chatHistory = document.getElementById('chat-history');
+const toolPanel = document.getElementById('tool-output-panel');
+const sendButton = document.getElementById('send-button');
+const inputSection = document.getElementById('input-section');
+const statusSection = document.getElementById('status-section');
+const chatsSection = document.getElementById('chats-section');
+const tasksSection = document.getElementById('tasks-section');
+const progressBar = document.getElementById('progress-bar');
+const autoScrollSwitch = document.getElementById('auto-scroll-switch');
+const timeDate = document.getElementById('time-date-container');
+
 import * as msgs from "/js/messages.js";
 import * as api from "/js/api.js";
 import * as css from "/js/css.js";
@@ -229,9 +247,40 @@ updateUserTime();
 setInterval(updateUserTime, 1000);
 
 function setMessage(id, type, heading, content, temp, kvps = null) {
+
+    // Search for the existing message container by id
+    let messageContainer = document.getElementById(`message-${id}`);
+
+    if (messageContainer) {
+        // Don't re-render user messages
+        if (type === 'user') {
+            return; // Skip re-rendering
+        }
+        // For other types, update the message
+        messageContainer.innerHTML = '';
+    } else {
+        // Create a new container if not found
+        const sender = type === 'user' ? 'user' : 'ai';
+        messageContainer = document.createElement('div');
+        messageContainer.id = `message-${id}`;
+        messageContainer.classList.add('message-container', `${sender}-container`);
+        if (temp) messageContainer.classList.add("message-temp");
+    }
+
+    const handler = msgs.getHandler(type);
+    handler(messageContainer, id, type, heading, content, temp, kvps);
+
+    const parent = (type === 'tool' || type === 'code_exe') ? toolPanel : chatHistory;
+    if (!document.getElementById(`message-${id}`)) {
+        parent.appendChild(messageContainer);
+    }
+
+    if (autoScroll && parent === chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+
   const result = msgs.setMessage(id, type, heading, content, temp, kvps);
   if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
   return result;
+
 }
 
 window.loadKnowledge = async function () {
