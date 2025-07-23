@@ -1,5 +1,5 @@
 import models
-from agent import AgentConfig, ModelConfig
+from agent import AgentConfig
 from python.helpers import runtime, settings, defer
 from python.helpers.print_style import PrintStyle
 
@@ -7,41 +7,67 @@ from python.helpers.print_style import PrintStyle
 def initialize_agent():
     current_settings = settings.get_settings()
 
+    def _normalize_model_kwargs(kwargs: dict) -> dict:
+        # convert string values that represent valid Python numbers to numeric types
+        result = {}
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                # try to convert string to number if it's a valid Python number
+                try:
+                    # try int first, then float
+                    result[key] = int(value)
+                except ValueError:
+                    try:
+                        result[key] = float(value)
+                    except ValueError:
+                        result[key] = value
+            else:
+                result[key] = value
+        return result
+
     # chat model from user settings
-    chat_llm = ModelConfig(
+    chat_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["chat_model_provider"]],
         name=current_settings["chat_model_name"],
+        api_base=current_settings["chat_model_api_base"],
         ctx_length=current_settings["chat_model_ctx_length"],
         vision=current_settings["chat_model_vision"],
         limit_requests=current_settings["chat_model_rl_requests"],
         limit_input=current_settings["chat_model_rl_input"],
         limit_output=current_settings["chat_model_rl_output"],
-        kwargs=current_settings["chat_model_kwargs"],
+        kwargs=_normalize_model_kwargs(current_settings["chat_model_kwargs"]),
     )
 
     # utility model from user settings
-    utility_llm = ModelConfig(
+    utility_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["util_model_provider"]],
         name=current_settings["util_model_name"],
+        api_base=current_settings["util_model_api_base"],
         ctx_length=current_settings["util_model_ctx_length"],
         limit_requests=current_settings["util_model_rl_requests"],
         limit_input=current_settings["util_model_rl_input"],
         limit_output=current_settings["util_model_rl_output"],
-        kwargs=current_settings["util_model_kwargs"],
+        kwargs=_normalize_model_kwargs(current_settings["util_model_kwargs"]),
     )
     # embedding model from user settings
-    embedding_llm = ModelConfig(
+    embedding_llm = models.ModelConfig(
+        type=models.ModelType.EMBEDDING,
         provider=models.ModelProvider[current_settings["embed_model_provider"]],
         name=current_settings["embed_model_name"],
+        api_base=current_settings["embed_model_api_base"],
         limit_requests=current_settings["embed_model_rl_requests"],
-        kwargs=current_settings["embed_model_kwargs"],
+        kwargs=_normalize_model_kwargs(current_settings["embed_model_kwargs"]),
     )
     # browser model from user settings
-    browser_llm = ModelConfig(
+    browser_llm = models.ModelConfig(
+        type=models.ModelType.CHAT,
         provider=models.ModelProvider[current_settings["browser_model_provider"]],
         name=current_settings["browser_model_name"],
+        api_base=current_settings["browser_model_api_base"],
         vision=current_settings["browser_model_vision"],
-        kwargs=current_settings["browser_model_kwargs"],
+        kwargs=_normalize_model_kwargs(current_settings["browser_model_kwargs"]),
     )
     # agent configuration
     config = AgentConfig(
@@ -55,7 +81,7 @@ def initialize_agent():
         mcp_servers=current_settings["mcp_servers"],
         code_exec_docker_enabled=False,
         # code_exec_docker_name = "A0-dev",
-        # code_exec_docker_image = "frdel/agent-zero-run:development",
+        # code_exec_docker_image = "agent0ai/agent-zero:development",
         # code_exec_docker_ports = { "22/tcp": 55022, "80/tcp": 55080 }
         # code_exec_docker_volumes = {
         # files.get_base_dir(): {"bind": "/a0", "mode": "rw"},
@@ -118,6 +144,10 @@ def initialize_mcp():
 def initialize_job_loop():
     from python.helpers.job_loop import run_loop
     return defer.DeferredTask("JobLoop").start_task(run_loop)
+
+def initialize_preload():
+    import preload
+    return defer.DeferredTask().start_task(preload.preload)
 
 
 def _args_override(config):
