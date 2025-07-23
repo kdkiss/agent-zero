@@ -6,6 +6,8 @@ const rightPanel = document.getElementById('right-panel');
 const container = document.querySelector('.container');
 const chatInput = document.getElementById('chat-input');
 const chatHistory = document.getElementById('chat-history');
+let toolPanel;
+
 
 let toolPanel;
 
@@ -102,6 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleSidebar(false);
         }
     });
+    toolPanel = document.getElementById('tool-output-panel');
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("sidebar-overlay");
@@ -290,6 +294,7 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     }
 
     if (autoScroll && parent === chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+
 
 }
 
