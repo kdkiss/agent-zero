@@ -9,7 +9,7 @@ const chatHistory = document.getElementById('chat-history');
 let toolPanel;
 
 
-let toolPanel;
+
 
 const toolPanel = document.getElementById('tool-output-panel');
 
@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     toolPanel = document.getElementById('tool-output-panel');
+
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -294,6 +295,8 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     }
 
     if (autoScroll && parent === chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+}
+
 
 
 }
