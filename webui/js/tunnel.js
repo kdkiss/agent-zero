@@ -1,3 +1,4 @@
+
 // Tunnel settings for the Settings modal
 document.addEventListener('alpine:init', () => {
     Alpine.data('tunnelSettings', () => ({
@@ -12,7 +13,7 @@ document.addEventListener('alpine:init', () => {
 
         async checkTunnelStatus() {
             try {
-                const response = await fetch('/tunnel_proxy', {
+                const response = await fetchApi('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -35,7 +36,7 @@ document.addEventListener('alpine:init', () => {
                     
                     if (storedTunnelUrl) {
                         // Use the stored URL but verify it's still valid
-                        const verifyResponse = await fetch('/tunnel_proxy', {
+                        const verifyResponse = await fetchApi('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -76,13 +77,13 @@ document.addEventListener('alpine:init', () => {
                 // Change refresh button appearance
                 const refreshButton = document.querySelector('.refresh-link-button');
                 const originalContent = refreshButton.innerHTML;
-                refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                refreshButton.innerHTML = '<span class="icon material-symbols-outlined spin">progress_activity</span> Refreshing...';
                 refreshButton.disabled = true;
                 refreshButton.classList.add('refreshing');
                 
                 try {
                     // First stop any existing tunnel
-                    const stopResponse = await fetch('/tunnel_proxy', {
+                    const stopResponse = await fetchApi('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ document.addEventListener('alpine:init', () => {
         async generateLink() {
             // First check if authentication is enabled
             try {
-                const authCheckResponse = await fetch('/settings_get');
+                const authCheckResponse = await fetchApi('/settings_get');
                 const authData = await authCheckResponse.json();
                 
                 // Find the auth_login and auth_password in the settings
@@ -163,19 +164,19 @@ document.addEventListener('alpine:init', () => {
             // Get provider from the parent settings modal scope
             const modalEl = document.getElementById('settingsModal');
             const modalAD = Alpine.$data(modalEl);
-            const provider = modalAD.provider || 'serveo'; // Default to serveo if not set
+            const provider = modalAD.provider || 'cloudflared'; // Default to cloudflared if not set
             
             // Change create button appearance
             const createButton = document.querySelector('.tunnel-actions .btn-ok');
             if (createButton) {
-                createButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                createButton.innerHTML = '<span class="icon material-symbols-outlined spin">progress_activity</span> Creating...';
                 createButton.disabled = true;
                 createButton.classList.add('creating');
             }
             
             try {
                 // Call the backend API to create a tunnel
-                const response = await fetch('/tunnel_proxy', {
+                const response = await fetchApi('/tunnel_proxy', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -207,7 +208,7 @@ document.addEventListener('alpine:init', () => {
                     
                     // Check if tunnel is running now
                     try {
-                        const statusResponse = await fetch('/tunnel_proxy', {
+                        const statusResponse = await fetchApi('/tunnel_proxy', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -244,7 +245,7 @@ document.addEventListener('alpine:init', () => {
                 // Reset create button if it's still in the DOM
                 const createButton = document.querySelector('.tunnel-actions .btn-ok');
                 if (createButton) {
-                    createButton.innerHTML = '<i class="fas fa-play-circle"></i> Create Tunnel';
+                    createButton.innerHTML = '<span class="icon material-symbols-outlined">play_circle</span> Create Tunnel';
                     createButton.disabled = false;
                     createButton.classList.remove('creating');
                 }
@@ -259,7 +260,7 @@ document.addEventListener('alpine:init', () => {
                 
                 try {
                     // Call the backend to stop the tunnel
-                    const response = await fetch('/tunnel_proxy', {
+                    const response = await fetchApi('/tunnel_proxy', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -310,7 +311,7 @@ document.addEventListener('alpine:init', () => {
             navigator.clipboard.writeText(this.tunnelLink)
                 .then(() => {
                     // Update button to show success state
-                    copyButton.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    copyButton.innerHTML = '<span class="icon material-symbols-outlined">check</span> Copied!';
                     copyButton.classList.add('copy-success');
                     
                     // Show toast notification
@@ -327,7 +328,7 @@ document.addEventListener('alpine:init', () => {
                     window.toast("Failed to copy tunnel URL", "error", 3000);
                     
                     // Show error state
-                    copyButton.innerHTML = '<i class="fas fa-times"></i> Failed';
+                    copyButton.innerHTML = '<span class="icon material-symbols-outlined">close</span> Failed';
                     copyButton.classList.add('copy-error');
                     
                     // Reset button after 2 seconds
