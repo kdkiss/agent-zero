@@ -1,5 +1,6 @@
 import asyncio
 import nest_asyncio
+
 nest_asyncio.apply()
 
 from collections import OrderedDict
@@ -79,7 +80,7 @@ class AgentContext:
         if not AgentContext._contexts:
             return None
         return list(AgentContext._contexts.values())[0]
-    
+
     @staticmethod
     def all():
         return list(AgentContext._contexts.values())
@@ -97,7 +98,8 @@ class AgentContext:
             "name": self.name,
             "created_at": (
                 Localization.get().serialize_datetime(self.created_at)
-                if self.created_at else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+                if self.created_at
+                else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
             ),
             "no": self.no,
             "log_guid": self.log.guid,
@@ -106,7 +108,8 @@ class AgentContext:
             "paused": self.paused,
             "last_message": (
                 Localization.get().serialize_datetime(self.last_message)
-                if self.last_message else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
+                if self.last_message
+                else Localization.get().serialize_datetime(datetime.fromtimestamp(0))
             ),
             "type": self.type.value,
         }
@@ -124,7 +127,11 @@ class AgentContext:
     ) -> list[Log.LogItem]:
         items: list[Log.LogItem] = []
         for context in AgentContext.all():
-            items.append(context.log.log(type, heading, content, kvps, temp, update_progress, id, **kwargs))
+            items.append(
+                context.log.log(
+                    type, heading, content, kvps, temp, update_progress, id, **kwargs
+                )
+            )
         return items
 
     def kill_process(self):
@@ -195,31 +202,20 @@ class AgentContext:
             agent.handle_critical_exception(e)
 
 
-@dataclass
-class ModelConfig:
-    provider: models.ModelProvider
-    name: str
-    ctx_length: int = 0
-    limit_requests: int = 0
-    limit_input: int = 0
-    limit_output: int = 0
-    vision: bool = False
-    kwargs: dict = field(default_factory=dict)
-
 
 @dataclass
 class AgentConfig:
-    chat_model: ModelConfig
-    utility_model: ModelConfig
-    embeddings_model: ModelConfig
-    browser_model: ModelConfig
+    chat_model: models.ModelConfig
+    utility_model: models.ModelConfig
+    embeddings_model: models.ModelConfig
+    browser_model: models.ModelConfig
     mcp_servers: str
     prompts_subdir: str = ""
     memory_subdir: str = ""
     knowledge_subdirs: list[str] = field(default_factory=lambda: ["default", "custom"])
     code_exec_docker_enabled: bool = False
     code_exec_docker_name: str = "A0-dev"
-    code_exec_docker_image: str = "frdel/agent-zero-run:development"
+    code_exec_docker_image: str = "agent0ai/agent-zero-run:development"
     code_exec_docker_ports: dict[str, int] = field(
         default_factory=lambda: {"22/tcp": 55022, "80/tcp": 55080}
     )
@@ -253,6 +249,8 @@ class LoopData:
         self.extras_temporary: OrderedDict[str, history.MessageContent] = OrderedDict()
         self.extras_persistent: OrderedDict[str, history.MessageContent] = OrderedDict()
         self.last_response = ""
+        self.params_temporary: dict = {}
+        self.params_persistent: dict = {}
 
         # override values with kwargs
         for key, value in kwargs.items():
@@ -287,11 +285,11 @@ class Agent:
         self.config = config
 
         # agent context
-        self.context = context or AgentContext(config)
+        self.context = context or AgentContext(config=config, agent0=self)
 
         # non-config vars
         self.number = number
-        self.agent_name = f"Agent {self.number}"
+        self.agent_name = f"A{self.number}"
 
         self.history = history.History(self)
         self.last_user_message: history.Message | None = None
@@ -313,34 +311,39 @@ class Agent:
 
                     self.context.streaming_agent = self  # mark self as current streamer
                     self.loop_data.iteration += 1
+                    self.loop_data.params_temporary = {}  # clear temporary params
 
                     # call message_loop_start extensions
-                    await self.call_extensions("message_loop_start", loop_data=self.loop_data)
+                    await self.call_extensions(
+                        "message_loop_start", loop_data=self.loop_data
+                    )
 
                     try:
                         # prepare LLM chain (model, system, history)
                         prompt = await self.prepare_prompt(loop_data=self.loop_data)
 
-                        # output that the agent is starting
-                        PrintStyle(
-                            bold=True,
-                            font_color="green",
-                            padding=True,
-                            background_color="white",
-                        ).print(f"{self.agent_name}: Generating")
-                        log = self.context.log.log(
-                            type="agent", heading=f"{self.agent_name}: Generating"
-                        )
+                        # call before_main_llm_call extensions
+                        await self.call_extensions("before_main_llm_call", loop_data=self.loop_data)
+
+                        async def reasoning_callback(chunk: str, full: str):
+                            if chunk == full:
+                                printer.print("Reasoning: ")  # start of reasoning
+                            printer.stream(chunk)
+                            await self.handle_reasoning_stream(full)
 
                         async def stream_callback(chunk: str, full: str):
                             # output the agent response stream
-                            if chunk:
-                                printer.stream(chunk)
-                                self.log_from_stream(full, log)
+                            if chunk == full:
+                                printer.print("Response: ")  # start of response
+                            printer.stream(chunk)
+                            await self.handle_response_stream(full)
 
-                        agent_response = await self.call_chat_model(
-                            prompt, callback=stream_callback
-                        )  # type: ignore
+                        # call main LLM
+                        agent_response, _reasoning = await self.call_chat_model(
+                            messages=prompt,
+                            response_callback=stream_callback,
+                            reasoning_callback=reasoning_callback,
+                        )
 
                         await self.handle_intervention(agent_response)
 
@@ -394,7 +397,7 @@ class Agent:
                 # call monologue_end extensions
                 await self.call_extensions("monologue_end", loop_data=self.loop_data)  # type: ignore
 
-    async def prepare_prompt(self, loop_data: LoopData) -> ChatPromptTemplate:
+    async def prepare_prompt(self, loop_data: LoopData) -> list[BaseMessage]:
         self.context.log.set_progress("Building prompt")
 
         # call extensions before setting prompts
@@ -407,17 +410,19 @@ class Agent:
         # and allow extensions to edit them
         await self.call_extensions("message_loop_prompts_after", loop_data=loop_data)
 
-        # extras (memory etc.)
-        # extras: list[history.OutputMessage] = []
-        # for extra in loop_data.extras_persistent.values():
-        #     extras += history.Message(False, content=extra).output()
-        # for extra in loop_data.extras_temporary.values():
-        #     extras += history.Message(False, content=extra).output()
+        # concatenate system prompt
+        system_text = "\n\n".join(loop_data.system)
+
+        # join extras
         extras = history.Message(
-            False, 
-            content=self.read_prompt("agent.context.extras.md", extras=dirty_json.stringify(
-                {**loop_data.extras_persistent, **loop_data.extras_temporary}
-                ))).output()
+            False,
+            content=self.read_prompt(
+                "agent.context.extras.md",
+                extras=dirty_json.stringify(
+                    {**loop_data.extras_persistent, **loop_data.extras_temporary}
+                ),
+            ),
+        ).output()
         loop_data.extras_temporary.clear()
 
         # convert history + extras to LLM format
@@ -425,28 +430,23 @@ class Agent:
             loop_data.history_output + extras
         )
 
-        # build chain from system prompt, message history and model
-        system_text = "\n\n".join(loop_data.system)
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessage(content=system_text),
-                *history_langchain,
-                # AIMessage(content="JSON:"), # force the LLM to start with json
-            ]
-        )
+        # build full prompt from system prompt, message history and extrS
+        full_prompt: list[BaseMessage] = [
+            SystemMessage(content=system_text),
+            *history_langchain,
+        ]
+        full_text = ChatPromptTemplate.from_messages(full_prompt).format()
 
         # store as last context window content
         self.set_data(
             Agent.DATA_NAME_CTX_WINDOW,
             {
-                "text": prompt.format(),
-                "tokens": self.history.get_tokens()
-                + tokens.approximate_tokens(system_text)
-                + tokens.approximate_tokens(history.output_text(extras)),
+                "text": full_text,
+                "tokens": tokens.approximate_tokens(full_text),
             },
         )
 
-        return prompt
+        return full_prompt
 
     def handle_critical_exception(self, exception: Exception):
         if isinstance(exception, HandledException):
@@ -527,14 +527,14 @@ class Agent:
                 "fw.intervention.md",
                 message=message.message,
                 attachments=message.attachments,
-                system_message=message.system_message
+                system_message=message.system_message,
             )
         else:
             content = self.parse_prompt(
                 "fw.user_message.md",
                 message=message.message,
                 attachments=message.attachments,
-                system_message=message.system_message
+                system_message=message.system_message,
             )
 
         # remove empty parts from template
@@ -567,27 +567,31 @@ class Agent:
         return self.history.output_text(human_label="user", ai_label="assistant")
 
     def get_chat_model(self):
-        return models.get_model(
-            models.ModelType.CHAT,
+        return models.get_chat_model(
             self.config.chat_model.provider,
             self.config.chat_model.name,
-            **self.config.chat_model.kwargs,
+            **self.config.chat_model.build_kwargs(),
         )
 
     def get_utility_model(self):
-        return models.get_model(
-            models.ModelType.CHAT,
+        return models.get_chat_model(
             self.config.utility_model.provider,
             self.config.utility_model.name,
-            **self.config.utility_model.kwargs,
+            **self.config.utility_model.build_kwargs(),
+        )
+
+    def get_browser_model(self):
+        return models.get_browser_model(
+            self.config.browser_model.provider,
+            self.config.browser_model.name,
+            **self.config.browser_model.build_kwargs(),
         )
 
     def get_embedding_model(self):
-        return models.get_model(
-            models.ModelType.EMBEDDING,
+        return models.get_embedding_model(
             self.config.embeddings_model.provider,
             self.config.embeddings_model.name,
-            **self.config.embeddings_model.kwargs,
+            **self.config.embeddings_model.build_kwargs(),
         )
 
     async def call_utility_model(
@@ -597,36 +601,37 @@ class Agent:
         callback: Callable[[str], Awaitable[None]] | None = None,
         background: bool = False,
     ):
-        prompt = ChatPromptTemplate.from_messages(
-            [SystemMessage(content=system), HumanMessage(content=message)]
-        )
-
-        response = ""
-
-        # model class
         model = self.get_utility_model()
 
         # rate limiter
         limiter = await self.rate_limiter(
-            self.config.utility_model, prompt.format(), background
+            self.config.utility_model, f"SYSTEM: {system}\nUSER: {message}", background
         )
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+        # add output tokens to rate limiter in tokens callback
+        async def tokens_callback(delta: str, tokens: int):
+            await self.handle_intervention()
+            limiter.add(output=tokens)
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
-
+        # propagate stream to callback if set
+        async def stream_callback(chunk: str, total: str):
             if callback:
-                await callback(content)
+                await callback(chunk)
+
+        response, _reasoning = await model.unified_call(
+            system_message=system,
+            user_message=message,
+            response_callback=stream_callback,
+            tokens_callback=tokens_callback,
+        )
 
         return response
 
     async def call_chat_model(
         self,
-        prompt: ChatPromptTemplate,
-        callback: Callable[[str, str], Awaitable[None]] | None = None,
+        messages: list[BaseMessage],
+        response_callback: Callable[[str, str], Awaitable[None]] | None = None,
+        reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
     ):
         response = ""
 
@@ -634,22 +639,27 @@ class Agent:
         model = self.get_chat_model()
 
         # rate limiter
-        limiter = await self.rate_limiter(self.config.chat_model, prompt.format())
+        limiter = await self.rate_limiter(
+            self.config.chat_model, ChatPromptTemplate.from_messages(messages).format()
+        )
 
-        async for chunk in (prompt | model).astream({}):
-            await self.handle_intervention()  # wait for intervention and handle it, if paused
+        # add output tokens to rate limiter in tokens callback
+        async def tokens_callback(delta: str, tokens: int):
+            await self.handle_intervention()
+            limiter.add(output=tokens)
 
-            content = models.parse_chunk(chunk)
-            limiter.add(output=tokens.approximate_tokens(content))
-            response += content
+        # call model
+        response, reasoning = await model.unified_call(
+            messages=messages,
+            reasoning_callback=reasoning_callback,
+            response_callback=response_callback,
+            tokens_callback=tokens_callback,
+        )
 
-            if callback:
-                await callback(content, response)
-
-        return response
+        return response, reasoning
 
     async def rate_limiter(
-        self, model_config: ModelConfig, input: str, background: bool = False
+        self, model_config: models.ModelConfig, input: str, background: bool = False
     ):
         # rate limiter log
         wait_log = None
@@ -705,34 +715,39 @@ class Agent:
         if tool_request is not None:
             raw_tool_name = tool_request.get("tool_name", "")  # Get the raw tool name
             tool_args = tool_request.get("tool_args", {})
-            
+
             tool_name = raw_tool_name  # Initialize tool_name with raw_tool_name
             tool_method = None  # Initialize tool_method
 
             # Split raw_tool_name into tool_name and tool_method if applicable
             if ":" in raw_tool_name:
                 tool_name, tool_method = raw_tool_name.split(":", 1)
-            
+
             tool = None  # Initialize tool to None
 
             # Try getting tool from MCP first
             try:
-                import python.helpers.mcp_handler as mcp_helper 
-                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(self, tool_name)
+                import python.helpers.mcp_handler as mcp_helper
+
+                mcp_tool_candidate = mcp_helper.MCPConfig.get_instance().get_tool(
+                    self, tool_name
+                )
                 if mcp_tool_candidate:
                     tool = mcp_tool_candidate
             except ImportError:
-                PrintStyle(background_color="black", font_color="yellow", padding=True).print(
-                    "MCP helper module not found. Skipping MCP tool lookup."
-                 )
+                PrintStyle(
+                    background_color="black", font_color="yellow", padding=True
+                ).print("MCP helper module not found. Skipping MCP tool lookup.")
             except Exception as e:
-                PrintStyle(background_color="black", font_color="red", padding=True).print(
-                    f"Failed to get MCP tool '{tool_name}': {e}"
-                )
+                PrintStyle(
+                    background_color="black", font_color="red", padding=True
+                ).print(f"Failed to get MCP tool '{tool_name}': {e}")
 
             # Fallback to local get_tool if MCP tool was not found or MCP lookup failed
             if not tool:
-                tool = self.get_tool(name=tool_name, method=tool_method, args=tool_args, message=msg)
+                tool = self.get_tool(
+                    name=tool_name, method=tool_method, args=tool_args, message=msg, loop_data=self.loop_data
+                )
 
             if tool:
                 await self.handle_intervention()
@@ -745,7 +760,9 @@ class Agent:
                 if response.break_loop:
                     return response.message
             else:
-                error_detail = f"Tool '{raw_tool_name}' not found or could not be initialized."
+                error_detail = (
+                    f"Tool '{raw_tool_name}' not found or could not be initialized."
+                )
                 self.hist_add_warning(error_detail)
                 PrintStyle(font_color="red", padding=True).print(error_detail)
                 self.context.log.log(
@@ -756,21 +773,36 @@ class Agent:
             self.hist_add_warning(warning_msg_misformat)
             PrintStyle(font_color="red", padding=True).print(warning_msg_misformat)
             self.context.log.log(
-                type="error", content=f"{self.agent_name}: Message misformat, no valid tool request found."
+                type="error",
+                content=f"{self.agent_name}: Message misformat, no valid tool request found.",
             )
 
-    def log_from_stream(self, stream: str, logItem: Log.LogItem):
+    async def handle_reasoning_stream(self, stream: str):
+        await self.call_extensions(
+            "reasoning_stream",
+            loop_data=self.loop_data,
+            text=stream,
+        )
+
+    async def handle_response_stream(self, stream: str):
         try:
             if len(stream) < 25:
                 return  # no reason to try
             response = DirtyJson.parse_string(stream)
             if isinstance(response, dict):
-                # log if result is a dictionary already
-                logItem.update(content=stream, kvps=response)
+                await self.call_extensions(
+                    "response_stream",
+                    loop_data=self.loop_data,
+                    text=stream,
+                    parsed=response,
+                )
+
         except Exception as e:
             pass
 
-    def get_tool(self, name: str, method: str | None, args: dict, message: str, **kwargs):
+    def get_tool(
+        self, name: str, method: str | None, args: dict, message: str, loop_data: LoopData | None, **kwargs
+    ):
         from python.tools.unknown import Unknown
         from python.helpers.tool import Tool
 
@@ -778,13 +810,22 @@ class Agent:
             "python/tools", name + ".py", Tool
         )
         tool_class = classes[0] if classes else Unknown
-        return tool_class(agent=self, name=name, method=method, args=args, message=message, **kwargs)
+        return tool_class(
+            agent=self, name=name, method=method, args=args, message=message, loop_data=loop_data, **kwargs
+        )
 
     async def call_extensions(self, folder: str, **kwargs) -> Any:
         from python.helpers.extension import Extension
 
-        classes = extract_tools.load_classes_from_folder(
-            "python/extensions/" + folder, "*", Extension
-        )
+        cache = {}  # some extensions can be called very often, like response_stream
+
+        if folder in cache:
+            classes = cache[folder]
+        else:
+            classes = extract_tools.load_classes_from_folder(
+                "python/extensions/" + folder, "*", Extension
+            )
+            cache[folder] = classes
+
         for cls in classes:
             await cls(agent=self).execute(**kwargs)
