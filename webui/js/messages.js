@@ -204,6 +204,17 @@ export function _drawMessage(
     wrapper = details;
   }
 
+  let wrapper = messageContainer;
+  if (messageClasses.includes("message-tool") || messageClasses.includes("message-code-exe")) {
+    const details = document.createElement("details");
+    details.classList.add("collapsible-message");
+    const summary = document.createElement("summary");
+    summary.textContent = heading || "Tool Output";
+    details.appendChild(summary);
+    wrapper.appendChild(details);
+    wrapper = details;
+  }
+
   if (heading) {
     const headingElement = document.createElement("div");
     headingElement.classList.add("msg-heading");
@@ -720,6 +731,7 @@ function drawKvps(container, kvps, latex) {
 
 
 
+
       let wrapper = td;
       if (row.classList.contains("msg-thoughts")) {
         th.remove();
@@ -774,6 +786,7 @@ function drawKvps(container, kvps, latex) {
           pre.appendChild(span);
           wrapper.appendChild(pre);
           addCopyButtonToElement(row.classList.contains("msg-thoughts") ? wrapper : row);
+
 
 
 

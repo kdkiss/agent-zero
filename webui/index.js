@@ -6,6 +6,10 @@ const rightPanel = document.getElementById('right-panel');
 const container = document.querySelector('.container');
 const chatInput = document.getElementById('chat-input');
 const chatHistory = document.getElementById('chat-history');
+// May be set during DOMContentLoaded; using var avoids redeclaration errors if
+// the module is loaded multiple times in certain browsers
+var toolPanel;
+
 let toolPanel;
 
 
@@ -105,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     toolPanel = document.getElementById('tool-output-panel');
+
 
 
 
