@@ -6,7 +6,11 @@ const rightPanel = document.getElementById('right-panel');
 const container = document.querySelector('.container');
 const chatInput = document.getElementById('chat-input');
 const chatHistory = document.getElementById('chat-history');
+
+let toolPanel;
+
 const toolPanel = document.getElementById('tool-output-panel');
+
 const sendButton = document.getElementById('send-button');
 const inputSection = document.getElementById('input-section');
 const statusSection = document.getElementById('status-section');
@@ -90,6 +94,15 @@ function handleResize() {
 window.addEventListener("load", handleResize);
 window.addEventListener("resize", handleResize);
 
+
+document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('sidebar-overlay');
+    overlay.addEventListener('click', () => {
+        if (isMobile()) {
+            toggleSidebar(false);
+        }
+    });
+
 document.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("sidebar-overlay");
   overlay.addEventListener("click", () => {
@@ -97,6 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
       toggleSidebar(false);
     }
   });
+
 });
 
 function setupSidebarToggle() {
@@ -276,6 +290,11 @@ function setMessage(id, type, heading, content, temp, kvps = null) {
     }
 
     if (autoScroll && parent === chatHistory) chatHistory.scrollTop = chatHistory.scrollHeight;
+
+}
+
+
+
 
   const result = msgs.setMessage(id, type, heading, content, temp, kvps);
   if (autoScroll) chatHistory.scrollTop = chatHistory.scrollHeight;
