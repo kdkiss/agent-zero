@@ -125,9 +125,7 @@
 }
 
 #path-text {
-  font-family: 'Roboto Mono', monospace;
-  font-optical-sizing: auto;
-  -webkit-font-optical-sizing: auto;
+  font-family: "Fira Code", monospace;
   opacity: 0.9;
 }
 

@@ -177,8 +177,7 @@
   border: none;
   background-color: transparent;
   color: var(--color-text);
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
+  font-family: "Fira Code", monospace;
   font-size: 0.955rem;
   padding: 1.2rem 1rem;
   resize: none;
@@ -262,7 +261,7 @@
   cursor: pointer;
   border: none;
   font-size: 0.875rem;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-family: "Fira Code", monospace;
 }
 
 .btn.slim {
