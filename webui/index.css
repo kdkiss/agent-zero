@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
 
 /* Add box-sizing globally for better cross-browser consistency */
 *,
@@ -9,17 +9,17 @@
 
 :root {
   /* Dark mode */
-  --color-background-dark: #131313;
+  --color-background-dark: #1e1e1e;
   --color-text-dark: #d4d4d4;
-  --color-primary-dark: #737a81;
-  --color-secondary-dark: #656565;
-  --color-accent-dark: #cf6679;
-  --color-message-bg-dark: #2d2d2d;
-  --color-message-text-dark: #e0e0e0;
-  --color-panel-dark: #171717;
-  --color-border-dark: #444444a8;
-  --color-input-dark: #131313;
-  --color-input-focus-dark: #101010;
+  --color-primary-dark: #007acc;
+  --color-secondary-dark: #333333;
+  --color-accent-dark: #007acc;
+  --color-message-bg-dark: #252526;
+  --color-message-text-dark: #d4d4d4;
+  --color-panel-dark: #252526;
+  --color-border-dark: #333333;
+  --color-input-dark: #333333;
+  --color-input-focus-dark: #252526;
 
   /* Light mode */
   --color-background-light: #dbdbdb;
@@ -73,7 +73,7 @@ body,
 html {
   background-color: var(--color-background);
   color: var(--color-text);
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-family: "Fira Code", monospace;
   width: 100%;
   height: 100%;
   min-width: 320px !important;
@@ -450,9 +450,7 @@ h4 {
 }
 
 pre {
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
-  -webkit-font-optical-sizing: auto;
+  font-family: "Fira Code", monospace;
   font-size: 0.75rem;
 }
 
@@ -721,9 +719,7 @@ pre {
   border-radius: 8px;
   color: var(--color-text);
   flex-grow: 1;
-  font-family: "Roboto Mono", monospace;
-  font-optical-sizing: auto;
-  -webkit-font-optical-sizing: auto;
+  font-family: "Fira Code", monospace;
   font-size: 0.9rem;
   max-height: 7rem;
   min-height: 3.05rem;
@@ -838,7 +834,7 @@ pre {
   border-radius: var(--spacing-xs);
   cursor: pointer;
   display: inline;
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-family: "Fira Code", monospace;
   font-size: var(--font-size-small);
   opacity: 0.8;
   text-wrap: nowrap;
@@ -1167,7 +1163,7 @@ pre {
   border: none;
   border-radius: 5px;
   color: var(--color-text);
-  font-family: "Rubik", Arial, Helvetica, sans-serif;
+  font-family: "Fira Code", monospace;
   font-size: 0.6rem;
   padding: 6px var(--spacing-sm);
   cursor: pointer;
@@ -1608,7 +1604,7 @@ input:checked + .slider:before {
     content: "Copied!";
     position: absolute;
     opacity: 0;
-    font-family: "Rubik", Arial, Helvetica, sans-serif;
+    font-family: "Fira Code", monospace;
     font-size: 0.7rem;
     padding: 6px var(--spacing-sm);
     -webkit-transition: opacity var(--transition-speed) ease-in-out;
@@ -1959,33 +1955,29 @@ a:active {
 }
 
 .tab {
-  padding: 8px 16px;
+  padding: 6px 12px;
   cursor: pointer;
   position: relative;
   color: var(--color-text);
-  border: 2px solid var(--color-border);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 3px 3px 0 0;
   transition: all 0.3s ease;
   background-color: var(--color-panel);
-  margin-bottom: -3px; /* Match the thicker border */
+  margin-bottom: -1px;
   z-index: 1;
 }
 
 .tab:not(.active) {
   opacity: 0.8;
-  border-bottom: 3px solid var(--color-border);
-  background-color: rgba(255, 255, 255, 0.03);
+  border-bottom-color: var(--color-border);
+  background-color: var(--color-panel);
 }
 
 .tab.active {
-  border-color: var(--color-border);
-  /* box-shadow:
-    0 -4px 8px -2px var(--color-border),
-    4px 0 8px -2px var(--color-border),
-    -4px 0 8px -2px var(--color-border); */
+  border-bottom-color: var(--color-primary);
   font-weight: bold;
-  background-color: var(--color-panel);
+  background-color: var(--color-background);
 }
 
 .light-mode .tab.active {
